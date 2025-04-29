@@ -13,9 +13,15 @@ def main() -> None:
 
     corner = Point(50, 50)
     maze_dimensions = (30, 30)
-    cell_dimensions = (20, 20)
+    cell_dimensions = (10, 10)
 
-    maze = Maze(corner, *maze_dimensions, *cell_dimensions, window, 0)
+    maze = Maze(
+        corner,
+        *maze_dimensions,
+        *cell_dimensions,
+        window,
+        seed=None
+    )
     maze.solve()
 
     window.wait_for_close()

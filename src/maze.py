@@ -5,6 +5,8 @@ from   point  import Point
 from   cell   import Cell
 from   window import Window
 
+from   frame  import Frame
+
 class Maze:
     def __init__(
         self,
@@ -36,7 +38,12 @@ class Maze:
         return
 
     def solve(self) -> bool:
-        return self._solve_r(0, 0)
+        # return self._solve_r(0, 0)
+        print("solving")
+        self._solve_dfs_iterative()
+        print("solved!")
+
+        return True
 
     def _create_cells(self) -> None:
         # fills cell matrix
@@ -61,16 +68,20 @@ class Maze:
 
         return
 
-    def _draw_cell(self, row: int, col: int) -> None:
+    def _draw_cell(self, row: int, col: int, animate=False) -> None:
         cell = self._cells[row][col]
         cell.draw()
 
-        self._animate()
+        if animate:
+            self._animate()
 
         return
 
-    def _animate(self) -> None:
+    def _animate(self, animate: bool=True) -> None:
         SLEEP_MILLISECONDS = 2.5
+
+        if not animate:
+            SLEEP_MILLISECONDS = 0
 
         self._window.redraw()
         time.sleep(SLEEP_MILLISECONDS / 100)
@@ -129,7 +140,6 @@ class Maze:
         for row in self._cells:
             for cell in row:
                 cell.visited = False
-                print(cell.visited)
 
         return
 
@@ -178,4 +188,79 @@ class Maze:
             start.draw_move(self._cells[row][col+1], undo=True)
 
         return False
+
+    def _solve_dfs_iterative(self) -> None:
+        '''
+        Solves the maze using a stack Stack.
+
+        Precondition:
+        - the maze is solveable.
+
+        Postcondition:
+        - all cells are set to visited
+        - the maze is "solved"
+
+        Side-Effects:
+        - renders lines between visited cells of the maze
+            - the final path is colored red
+        '''
+        neighbors = self._get_neighbors(0, 0)
+        random.shuffle(neighbors)
+        next_neighbor_index = 0
+
+        call_stack = [[0, 0, neighbors, next_neighbor_index]]
+
+        while call_stack:
+            self._animate()
+            row, col, neighbors, next_neighbor_index = call_stack[-1]
+
+            if next_neighbor_index >= len(neighbors):
+                print(f"visited all neighbors of ({row}, {col})")
+                call_stack.pop()
+
+                if call_stack:
+                    prev_row, prev_col, _, _ = call_stack[-1]
+                    cell, prev_cell = self._cells[row][col], self._cells[prev_row][prev_col]
+
+                    cell.draw_move(prev_cell, undo=True)
+                    
+                continue
+
+            next_row, next_col = neighbors[next_neighbor_index]
+
+            # neighbor index incremented for next time
+            call_stack[-1][3] += 1
+
+            neighbor = self._cells[next_row][next_col]
+            if neighbor.visited == False:
+                neighbor.visited = True
+
+                cell = self._cells[row][col]
+                cell.draw_move(neighbor)
+
+                if (next_row, next_col) == (self._num_rows-1, self._num_cols-1):
+                    break
+
+                neighbor_of_neighbors = self._get_neighbors(next_row, next_col)
+                random.shuffle(neighbor_of_neighbors)
+                call_stack.append([next_row, next_col, neighbor_of_neighbors, 0])
+            else:
+                print(f"revisited ({next_row}, {next_col}). skipping rest")
+
+        return
+
+    def _get_neighbors(self, row: int, col: int) -> list:
+        cell = self._cells[row][col]
+        neighbors = []
+
+        if 0 < row and cell.walls[0] == False and self._cells[row-1][col].visited == False:
+            neighbors.append((row-1, col))
+        if 0 < col and cell.walls[3] == False and self._cells[row][col-1].visited == False:
+            neighbors.append((row, col-1))
+        if row < self._num_rows-1 and cell.walls[2] == False and self._cells[row+1][col].visited == False:
+            neighbors.append((row+1, col))
+        if col < self._num_cols-1 and cell.walls[1] == False and self._cells[row][col+1].visited == False:
+            neighbors.append((row, col+1))
+        
+        return neighbors
 
