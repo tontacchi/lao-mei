@@ -5,8 +5,6 @@ from   point  import Point
 from   cell   import Cell
 from   window import Window
 
-from   frame  import Frame
-
 class Maze:
     def __init__(
         self,
